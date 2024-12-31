@@ -1,3 +1,61 @@
+let soundEnabled = true;
+let autoEnabled = true;
+let currentColorMode = 'random';
+let autoFireworkInterval;
+let audioContext;
+
+// Initialize audio context on user interaction
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+// Function to create a short beep sound for launch
+function createLaunchSound() {
+    if (!audioContext || !soundEnabled) return;
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.1);
+}
+
+// Function to create explosion sound
+function createExplosionSound() {
+    if (!audioContext || !soundEnabled) return;
+    
+    const noise = audioContext.createBufferSource();
+    const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    for (let i = 0; i < buffer.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    
+    const gainNode = audioContext.createGain();
+    noise.buffer = buffer;
+    noise.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    noise.start();
+    noise.stop(audioContext.currentTime + 0.1);
+}
+
 function createParticle(x, y, color) {
     const particle = document.createElement('div');
     particle.className = 'particle';
@@ -22,54 +80,91 @@ function createParticle(x, y, color) {
 
     document.body.appendChild(particle);
     setTimeout(() => particle.remove(), 1000);
-  }
+}
 
-  function createFirework(x, y) {
-    const colors = ['#ff0', '#f0f', '#0ff', '#f00', '#0f0', '#ff8c00', '#fff'];
+function getFireworkColor() {
+    const colors = {
+        'random': ['#ff0', '#f0f', '#0ff', '#f00', '#0f0', '#ff8c00', '#fff'],
+        'gold': ['#FFD700', '#FFA500', '#FFB52E', '#FFD900', '#FFED4A'],
+        'rainbow': ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8b00ff']
+    };
     
-    // Create multiple particles for a bigger explosion
-    for (let i = 0; i < 150; i++) {
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      setTimeout(() => {
-        createParticle(x, y, color);
-      }, Math.random() * 100);
-    }
-  }
+    const colorSet = colors[currentColorMode];
+    return colorSet[Math.floor(Math.random() * colorSet.length)];
+}
 
-  function shootFirework(startX) {
+function createFirework(x, y) {
+    if (soundEnabled) {
+        createExplosionSound();
+    }
+
+    for (let i = 0; i < 150; i++) {
+        const color = getFireworkColor();
+        setTimeout(() => {
+            createParticle(x, y, color);
+        }, Math.random() * 100);
+    }
+}
+
+function shootFirework(startX) {
+    if (soundEnabled) {
+        createLaunchSound();
+    }
+
     const firework = document.createElement('div');
     firework.className = 'firework';
     firework.style.left = startX + 'px';
     firework.style.backgroundColor = '#fff';
-    
-    // Random ending height
+
     const duration = 1000;
     firework.style.animation = `shoot ${duration}ms ease-out forwards`;
-    
+
     document.body.appendChild(firework);
 
     setTimeout(() => {
-      const rect = firework.getBoundingClientRect();
-      createFirework(rect.left, rect.top);
-      firework.remove();
+        const rect = firework.getBoundingClientRect();
+        createFirework(rect.left, rect.top);
+        firework.remove();
     }, duration);
-  }
+}
 
-  // Click handler
-  document.addEventListener('click', (e) => {
+function autoFirework() {
+    if (autoEnabled) {
+        const x = Math.random() * window.innerWidth;
+        shootFirework(x);
+    }
+}
+
+// Event Listeners
+document.addEventListener('click', (e) => {
+    initAudio(); // Initialize audio context on first click
+    if (e.target.classList.contains('btn')) return;
     shootFirework(e.clientX);
-  });
+});
 
-  // Auto fireworks
-  function autoFirework() {
-    const x = Math.random() * window.innerWidth;
-    shootFirework(x);
-  }
+document.getElementById('toggleSound').addEventListener('click', function() {
+    initAudio(); // Initialize audio context when toggling sound
+    soundEnabled = !soundEnabled;
+    this.textContent = `🔊 Sound: ${soundEnabled ? 'On' : 'Off'}`;
+});
 
-  // Initial fireworks
-  setTimeout(() => {
-    autoFirework();
-  }, 500);
+document.getElementById('toggleAuto').addEventListener('click', function() {
+    autoEnabled = !autoEnabled;
+    this.textContent = `🎆 Auto: ${autoEnabled ? 'On' : 'Off'}`;
+    if (autoEnabled) {
+        autoFireworkInterval = setInterval(autoFirework, 2000);
+    } else {
+        clearInterval(autoFireworkInterval);
+    }
+});
 
-  // Create random fireworks
-  setInterval(autoFirework, 2000);
+document.getElementById('colorMode').addEventListener('click', function() {
+    const modes = ['random', 'gold', 'rainbow'];
+    const currentIndex = modes.indexOf(currentColorMode);
+    currentColorMode = modes[(currentIndex + 1) % modes.length];
+    this.textContent = `🎨 ${currentColorMode.charAt(0).toUpperCase() + currentColorMode.slice(1)}`;
+});
+
+// Initial setup
+setTimeout(autoFirework, 500);
+autoFireworkInterval = setInterval(autoFirework, 2000);

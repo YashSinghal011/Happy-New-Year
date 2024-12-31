@@ -4,56 +4,85 @@ body {
     margin: 0;
     overflow: hidden;
     cursor: pointer;
-  }
+    font-family: Arial, sans-serif;
+    /* fonts */
+    font-family: "Spicy Rice", serif;
+font-weight: 400;
+font-style: normal;
+}
 
-  .new-year {
+.new-year {
     position: fixed;
     top: 20%;
     left: 50%;
     transform: translateX(-50%);
     font-size: 72px;
-    font-family: Arial, sans-serif;
     color: gold;
     text-shadow: 0 0 10px rgba(255,215,0,0.7);
     z-index: 3;
     pointer-events: none;
-  }
+    animation: pulse 2s infinite;
+}
 
-  .firework {
+.controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid gold;
+    color: gold;
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.3s;
+}
+
+.btn:hover {
+    background: rgba(255, 215, 0, 0.3);
+}
+
+.firework {
     position: absolute;
     width: 6px;
     height: 6px;
     border-radius: 50%;
-  }
+}
 
-  @keyframes shoot {
+@keyframes pulse {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.1); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+
+@keyframes shoot {
+    0% { transform: translateY(100vh) scale(1); }
+    50% { transform: translateY(50vh) scale(1); }
+    100% { transform: translateY(20vh) scale(0.3); }
+}
+
+@keyframes explode {
     0% {
-      transform: translateY(100vh) scale(1);
-    }
-    50% {
-      transform: translateY(50vh) scale(1);
+        transform: translate(var(--startX), var(--startY));
+        width: 6px;
+        height: 6px;
+        opacity: 1;
     }
     100% {
-      transform: translateY(20vh) scale(0.3);
+        transform: translate(var(--endX), var(--endY));
+        width: 3px;
+        height: 3px;
+        opacity: 0;
     }
-  }
+}
 
-  @keyframes explode {
-    0% {
-      transform: translate(var(--startX), var(--startY));
-      width: 6px;
-      height: 6px;
-      opacity: 1;
-    }
-    100% {
-      transform: translate(var(--endX), var(--endY));
-      width: 3px;
-      height: 3px;
-      opacity: 0;
-    }
-  }
-
-  .particle {
+.particle {
     position: absolute;
     top: 0;
     left: 0;
@@ -61,4 +90,4 @@ body {
     height: 6px;
     border-radius: 50%;
     transform-origin: center;
-  }
+}
